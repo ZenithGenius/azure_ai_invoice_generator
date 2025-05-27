@@ -466,21 +466,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Streamlit** for beautiful web interfaces
 - **Plotly** for interactive visualizations
 - **Azure Services** for scalable cloud infrastructure
-
-## 📞 **Support**
-
-### **Getting Help**
-- 📧 **Email**: support@invoice-management.com
-- 💬 **Discord**: [Join our community](https://discord.gg/invoice-management)
-- 📖 **Documentation**: [Full documentation](https://docs.invoice-management.com)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/your-repo/invoice-management-ai/issues)
-
-### **Enterprise Support**
-For enterprise deployments and custom solutions:
-- 🏢 **Enterprise Sales**: enterprise@invoice-management.com
-- 📞 **Phone Support**: +1-800-INVOICE
-- 🎯 **Custom Development**: Available for specific requirements
-
 ---
 
 ## 🎉 **What's New in v2.0**
