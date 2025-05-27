@@ -1,0 +1,408 @@
+version: '3.8'
+
+# Production Docker Compose Configuration
+# Enhanced security, resource limits, and monitoring
+
+services:
+  # Main Invoice Management Application
+  invoice-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: application
+    image: azure-invoice-app:${VERSION:-latest}
+    container_name: azure-invoice-app-prod
+    restart: unless-stopped
+    
+    # Security
+    user: appuser
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    
+    # Network
+    ports:
+      - "127.0.0.1:8501:8501"  # Bind to localhost only
+    networks:
+      - invoice-network
+    
+    # Environment
+    environment:
+      # Azure Configuration (use secrets in production)
+      - AZURE_COSMOS_ENDPOINT_FILE=/run/secrets/cosmos_endpoint
+      - AZURE_COSMOS_KEY_FILE=/run/secrets/cosmos_key
+      - AZURE_COSMOS_DATABASE=${AZURE_COSMOS_DATABASE:-InvoicesDB}
+      - AZURE_COSMOS_CONTAINER=${AZURE_COSMOS_CONTAINER:-container2}
+      
+      - AZURE_SEARCH_ENDPOINT_FILE=/run/secrets/search_endpoint
+      - AZURE_SEARCH_KEY_FILE=/run/secrets/search_key
+      - AZURE_SEARCH_INDEX=${AZURE_SEARCH_INDEX:-container2}
+      
+      - AZURE_AI_PROJECT_CONNECTION_STRING_FILE=/run/secrets/ai_project_connection
+      - AZURE_STORAGE_CONNECTION_STRING_FILE=/run/secrets/storage_connection
+      - AZURE_STORAGE_CONTAINER=${AZURE_STORAGE_CONTAINER:-invoices}
+      
+      # Redis Configuration
+      - REDIS_URL=redis://redis:6379
+      
+      # Application Configuration
+      - ENVIRONMENT=production
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - MAX_WORKERS=${MAX_WORKERS:-3}
+      - CACHE_TTL=${CACHE_TTL:-300}
+      
+      # Security
+      - STREAMLIT_SERVER_ENABLE_CORS=false
+      - STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=true
+      - STREAMLIT_SERVER_HEADLESS=true
+    
+    # Secrets (Docker Swarm or external secret management)
+    secrets:
+      - cosmos_endpoint
+      - cosmos_key
+      - search_endpoint
+      - search_key
+      - ai_project_connection
+      - storage_connection
+    
+    # Volumes (read-only where possible)
+    volumes:
+      - invoice-data:/app/generated_invoices
+      - report-data:/app/generated_reports
+      - log-data:/app/logs
+      - /tmp:/tmp  # Writable temp directory
+    
+    # Dependencies
+    depends_on:
+      redis:
+        condition: service_healthy
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis for Queue Management and Caching
+  redis:
+    image: redis:7-alpine
+    container_name: azure-invoice-redis-prod
+    ports:
+      - "6380:6379"  # Changed external port to 6380
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - invoice-network
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Nginx Reverse Proxy (Production)
+  nginx:
+    image: nginx:alpine
+    container_name: azure-invoice-nginx-prod
+    restart: unless-stopped
+    
+    # Security
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETGID
+      - SETUID
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    
+    # Network
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - invoice-network
+    
+    # Configuration
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - /var/cache/nginx:/var/cache/nginx
+      - /var/run:/var/run
+    
+    # Dependencies
+    depends_on:
+      invoice-app:
+        condition: service_healthy
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Prometheus for Metrics (Production)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: azure-invoice-prometheus-prod
+    restart: unless-stopped
+    
+    # Security
+    user: "65534:65534"  # nobody user
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    
+    # Network
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - invoice-network
+    
+    # Configuration
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus-data:/prometheus
+      - /tmp:/tmp
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=10GB'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Grafana for Dashboards (Production)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: azure-invoice-grafana-prod
+    restart: unless-stopped
+    
+    # Security
+    user: "472:472"  # Grafana user
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # Network
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - invoice-network
+    
+    # Environment
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD_FILE=/run/secrets/grafana_password
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_INSTALL_PLUGINS=redis-datasource
+    
+    # Secrets
+    secrets:
+      - grafana_password
+    
+    # Volumes
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - /tmp:/tmp
+    
+    # Dependencies
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Docker Secrets (for Docker Swarm or external secret management)
+secrets:
+  cosmos_endpoint:
+    external: true
+  cosmos_key:
+    external: true
+  search_endpoint:
+    external: true
+  search_key:
+    external: true
+  ai_project_connection:
+    external: true
+  storage_connection:
+    external: true
+  grafana_password:
+    external: true
+
+# Persistent Volumes
+volumes:
+  redis-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/azure-invoice/data/redis
+  
+  prometheus-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/azure-invoice/data/prometheus
+  
+  grafana-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/azure-invoice/data/grafana
+  
+  invoice-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/azure-invoice/data/invoices
+  
+  report-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/azure-invoice/data/reports
+  
+  log-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/azure-invoice/logs
+
+# Networks
+networks:
+  invoice-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: invoice-br0
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+    labels:
+      - "com.azure.invoice.network=production" 

@@ -1,0 +1,148 @@
+services:
+  # Main Invoice Management Application
+  invoice-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: application
+    container_name: azure-invoice-app
+    ports:
+      - "8501:8501"
+    environment:
+      # Azure Configuration (use secrets in production)
+      - AZURE_AI_ENDPOINT=${AZURE_AI_ENDPOINT}
+      - AGENT_ID=${AGENT_ID}
+      - COSMOS_ENDPOINT=${COSMOS_ENDPOINT}
+      - COSMOS_KEY=${COSMOS_KEY}
+      - COSMOS_DATABASE_NAME=${COSMOS_DATABASE_NAME:-InvoicesDB}
+      - COSMOS_CONTAINER_NAME=${COSMOS_CONTAINER_NAME:-container2}
+      - SEARCH_ENDPOINT=${SEARCH_ENDPOINT}
+      - SEARCH_KEY=${SEARCH_KEY}
+      - SEARCH_INDEX_NAME=${SEARCH_INDEX_NAME:-container2}
+      - STORAGE_CONNECTION_STRING=${STORAGE_CONNECTION_STRING}
+      - STORAGE_CONTAINER_NAME=${STORAGE_CONTAINER_NAME:-invoices}
+
+      # Performance Configuration
+      - MAX_WORKERS=${MAX_WORKERS:-3}
+      - CACHE_TTL=${CACHE_TTL:-300}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      # Redis Configuration
+      - REDIS_URL=redis://redis:6379
+
+      # Application Configuration
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_SERVER_ENABLE_CORS=false
+      - STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=false
+
+    volumes:
+      - ./generated_invoices:/app/generated_invoices
+      - ./generated_reports:/app/generated_reports
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - invoice-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis for Queue Management and Caching
+  redis:
+    image: redis:7-alpine
+    container_name: azure-invoice-redis
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - invoice-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Commander (GUI) - Only in monitoring profile
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: azure-invoice-redis-gui
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - HTTP_USER=${REDIS_COMMANDER_USER:-admin}
+      - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD:-admin123}
+    depends_on:
+      - redis
+    networks:
+      - invoice-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Prometheus for Metrics Collection - Only in monitoring profile
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: azure-invoice-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - invoice-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Grafana for Dashboards - Only in monitoring profile
+  grafana:
+    image: grafana/grafana:latest
+    container_name: azure-invoice-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    networks:
+      - invoice-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+volumes:
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  invoice-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+ 

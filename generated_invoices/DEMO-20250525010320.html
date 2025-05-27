@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice DEMO-20250525010320</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2E4057;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .invoice-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #048A81;
+        }
+        .company-info {
+            flex: 1;
+        }
+        .company-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2E4057;
+            margin-bottom: 10px;
+        }
+        .company-details {
+            color: #666;
+            line-height: 1.4;
+        }
+        .invoice-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #048A81;
+            text-align: right;
+        }
+        .invoice-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .invoice-details, .client-details {
+            flex: 1;
+            margin-right: 20px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2E4057;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #54C6EB;
+        }
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            background: white;
+        }
+        .invoice-table th {
+            background: #2E4057;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .invoice-table th:last-child,
+        .invoice-table td:last-child {
+            text-align: right;
+        }
+        .invoice-table th:nth-child(2),
+        .invoice-table td:nth-child(2) {
+            text-align: center;
+        }
+        .totals-section {
+            margin-top: 30px;
+            text-align: right;
+        }
+        .totals-table {
+            margin-left: auto;
+            min-width: 300px;
+        }
+        .totals-table td {
+            padding: 8px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .total-row {
+            font-size: 20px;
+            font-weight: bold;
+            background: #048A81;
+            color: white;
+        }
+        .total-row td {
+            border: none;
+            padding: 15px;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #54C6EB;
+            text-align: center;
+            color: #666;
+        }
+        .payment-terms {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 30px;
+            border-left: 4px solid #048A81;
+        }
+        @media print {
+            body { background: white; }
+            .invoice-container { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="company-info">
+                <div class="company-name">Global Technology and Associates</div>
+                <div class="company-details">
+                    Sur l`axe-lourd Yaoundé - Douala, 1 Km avant le Carrefour Nomayos, direction Yaoundé-Mbankomo<br>
+                    Phone: +237 679 790 400<br>
+                    Email: info@gta-nomayos.cm<br>
+                    Website: https://gta-nomayos.cm/
+                </div>
+            </div>
+            <div class="invoice-title">INVOICE</div>
+        </div>
+        
+        <!-- Invoice and Client Details -->
+        <div class="invoice-meta">
+            <div class="invoice-details">
+                <div class="section-title">Invoice Details</div>
+                <strong>Invoice Number:</strong> DEMO-20250525010320<br>
+                <strong>Invoice Date:</strong> 12/01/2024<br>
+                <strong>Due Date:</strong> 12/31/2024<br>
+                <strong>Payment Terms:</strong> Net 30<br>
+                <strong>PO Number:</strong> PO-2024-12345<br>
+                <strong>Project Ref:</strong> Website Redesign Project<br>
+            </div>
+            
+            <div class="client-details">
+                <div class="section-title">Bill To</div>
+                <strong>Acme Corporation</strong><br>
+                456 Business Avenue, Suite 200, Corporate City, CC 67890<br>
+                John Smith, Procurement Manager<br>
+                john.smith@acmecorp.com<br>
+            </div>
+        </div>
+        
+        <!-- Line Items -->
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+            <tr>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">Web Design and Development Services</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">40</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">$125.00</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">$5000.00</td>
+            </tr>
+            
+            <tr>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">Content Management System Setup</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">1</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">$800.00</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">$800.00</td>
+            </tr>
+            
+            <tr>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">SEO Optimization Package</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">1</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">$500.00</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">$500.00</td>
+            </tr>
+            
+            </tbody>
+        </table>
+        
+        <!-- Totals -->
+        <div class="totals-section">
+            <table class="totals-table">
+                <tr>
+                    <td><strong>Subtotal:</strong></td>
+                    <td><strong>$6300.00</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Tax (8.0%):</strong></td>
+                    <td><strong>$504.00</strong></td>
+                </tr>
+                <tr class="total-row">
+                    <td><strong>TOTAL:</strong></td>
+                    <td><strong>$6804.00 USD</strong></td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- Payment Terms -->
+        <div class="payment-terms">
+            <strong>Special Instructions:</strong><br>
+            Please process payment within 30 days. Contact billing@professionalservices.com for any questions.
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Thank you for your business!</strong></p>
+            <p>Tax ID: <your_company_tax_id_here> | Questions? Contact info@gta-nomayos.cm</p>
+        </div>
+    </div>
+</body>
+</html>
+        

@@ -1,0 +1,182 @@
+groups:
+  - name: invoice_app_alerts
+    rules:
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.95, sum(rate(streamlit_request_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency"
+          description: "95th percentile request latency is {{ $value }}s"
+
+      - alert: HighErrorRate
+        expr: sum(rate(ai_requests_total{status="error"}[5m])) / sum(rate(ai_requests_total[5m])) > 0.1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate"
+          description: "Error rate is {{ $value | humanizePercentage }}"
+
+      - alert: InvoiceAppDown
+        expr: up{job="invoice-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Invoice application is down"
+          description: "Invoice application has been down for more than 1 minute"
+
+      - alert: LowActiveUsers
+        expr: streamlit_active_users < 1
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "No active users"
+          description: "No users have been active for 5 minutes"
+
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes{job="invoice-app"} > 1e9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Invoice app is using more than 1GB of memory"
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis instance has been down for more than 1 minute"
+
+      - alert: HighCacheEvictionRate
+        expr: rate(redis_evicted_keys_total[5m]) > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High cache eviction rate"
+          description: "Redis is evicting more than 100 keys per second"
+
+      - alert: SlowAIRequests
+        expr: histogram_quantile(0.95, sum(rate(ai_request_duration_seconds_bucket[5m])) by (le)) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow AI processing"
+          description: "95th percentile AI request processing time is {{ $value }}s"
+
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Grafana is down"
+          description: "Grafana monitoring interface has been down for more than 1 minute"
+
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus monitoring system has been down for more than 1 minute"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis is using more than 90% of its available memory"
+
+      - alert: RedisHighConnectionCount
+        expr: redis_connected_clients > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Redis connections"
+          description: "Redis has more than 100 connected clients"
+
+      - alert: RedisRejectedConnections
+        expr: rate(redis_rejected_connections_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis rejecting connections"
+          description: "Redis is rejecting connections due to maxclients limit"
+
+      - alert: GrafanaHighResponseTime
+        expr: histogram_quantile(0.95, sum(rate(grafana_http_request_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Grafana high response time"
+          description: "95th percentile Grafana response time is {{ $value }}s"
+
+      - alert: PrometheusHighQueryLoad
+        expr: rate(prometheus_engine_query_duration_seconds_count[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Prometheus query load"
+          description: "Prometheus is processing more than 100 queries per second"
+
+      - alert: PrometheusTargetMissing
+        expr: up == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus target missing"
+          description: "Target {{ $labels.instance }} from job {{ $labels.job }} is down"
+
+      - alert: InvoiceProcessingDelay
+        expr: histogram_quantile(0.95, sum(rate(invoice_processing_duration_seconds_bucket[5m])) by (le)) > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow invoice processing"
+          description: "95th percentile invoice processing time is {{ $value }}s"
+
+      - alert: HighInvoiceFailureRate
+        expr: sum(rate(invoice_generation_total{status="failed"}[5m])) / sum(rate(invoice_generation_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High invoice failure rate"
+          description: "Invoice generation failure rate is {{ $value | humanizePercentage }}"
+
+      - alert: LowInvoiceGeneration
+        expr: rate(invoice_generation_total[1h]) < 1
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low invoice generation rate"
+          description: "Invoice generation rate is below 1 per hour"
+
+      - alert: HighPendingInvoices
+        expr: pending_invoices > 100
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of pending invoices"
+          description: "{{ $value }} invoices are pending processing"
