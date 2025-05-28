@@ -20,14 +20,14 @@ from analytics_dashboard import InvoiceAnalytics
 
 # MUST be the first Streamlit command
 st.set_page_config(
-    page_title="🤖 Invoice Management AI Assistant",
+    page_title="🚀 FacturIQ.ai - La Facturation Intelligente",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
-        "Get Help": "https://github.com/your-repo/invoice-management",
-        "Report a bug": "https://github.com/your-repo/invoice-management/issues",
-        "About": "# Invoice Management AI Assistant\nPowered by Azure AI Foundry & GPT-4o",
+        "Get Help": "https://github.com/yourusername/Azure_AI_Foundry",
+        "Report a bug": "https://github.com/yourusername/Azure_AI_Foundry/issues",
+        "About": "# FacturIQ.ai - La Facturation Intelligente\nPowered by Azure AI Foundry & GPT-4o",
     },
 )
 

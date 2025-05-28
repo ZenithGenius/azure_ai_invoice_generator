@@ -1,4 +1,4 @@
-# 🤖 Enhanced Invoice Management AI Assistant
+# 🚀 FacturIQ.ai - La Facturation Intelligente
 
 ## Azure AI Foundry & GPT-4o Powered Invoice Generation System
 

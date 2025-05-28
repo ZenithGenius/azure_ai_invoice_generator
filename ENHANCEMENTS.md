@@ -650,8 +650,8 @@ class SecurityFramework:
 #### **Progressive Web App (PWA) Capabilities**
 ```json
 {
-    "name": "Invoice Management AI",
-    "short_name": "InvoiceAI",
+    "name": "FacturIQ.ai - La Facturation Intelligente",
+    "short_name": "FacturIQ",
     "description": "AI-powered invoice management system",
     "start_url": "/",
     "display": "standalone",

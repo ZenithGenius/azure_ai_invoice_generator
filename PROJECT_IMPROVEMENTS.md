@@ -433,8 +433,8 @@ class DataProtectionManager:
 ```javascript
 // PWA manifest and service worker
 const PWA_CONFIG = {
-    name: 'Invoice Management AI',
-    short_name: 'InvoiceAI',
+    name: 'FacturIQ.ai - La Facturation Intelligente',
+    short_name: 'FacturIQ',
     description: 'AI-powered invoice management',
     start_url: '/',
     display: 'standalone',
